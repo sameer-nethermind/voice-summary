@@ -1,0 +1,40 @@
+services:
+  db:
+    image: postgres:15
+    container_name: postgres_db
+    # Alternatively, define environment inline or in an .env file
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: sameer
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    # This volume mounting puts main.sql where Postgres will run it at init
+    volumes:
+      - ./postgres/main.sql:/docker-entrypoint-initdb.d/main.sql
+    healthcheck:  # Add health check
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 2s
+      timeout: 2s
+      retries: 10
+
+  app:
+    container_name: go_app
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy  # Wait for healthy status
+    ports:
+      - "8080:8080"
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      LLAMA_API_KEY: ${LLAMA_API_KEY}
+      LEMONFOX_API_KEY: ${LEMONFOX_API_KEY}
+
